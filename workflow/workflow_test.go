@@ -43,20 +43,20 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 	}
 
 	var (
-		greeting       string
-		selectErr      error
-		selector       = workflow.NewSelector(ctx)
-		activityFuture = gworkflow.ExecuteActivityFunc(ctx, Activity, name)
+		greeting  string
+		selectErr error
+		selector  = workflow.NewSelector(ctx)
 	)
-	selector = gworkflow.SelectorAddFuture(ctx, selector, activityFuture, func(val string, err error) {
-		if err != nil {
-			selectErr = err
-			return
-		}
-		workflow.GetLogger(ctx).Info("Received activity result", "result", val)
-		greeting = val
-	})
-	selector = gworkflow.SelectorAddReceive(selector, timoutChannel.ReceiveChannel, func(_ None, more bool) {
+	selector = gworkflow.ExecuteActivityFunc(ctx, Activity, name).
+		AddFuture(ctx, selector, func(val string, err error) {
+			if err != nil {
+				selectErr = err
+				return
+			}
+			workflow.GetLogger(ctx).Info("Received activity result", "result", val)
+			greeting = val
+		})
+	selector = timoutChannel.AddReceive(selector, func(_ None, more bool) {
 		selectErr = fmt.Errorf("my custom timer fired: %w", workflow.ErrDeadlineExceeded)
 	})
 	selector.Select(ctx)

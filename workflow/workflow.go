@@ -229,7 +229,7 @@ func MutableSideEffect[T ComparableValue](ctx workflow.Context, id string, f fun
 }
 
 // SelectorAddReceive is analogous to workflow.Selector.AddReceive
-func SelectorAddReceive[T Value](s workflow.Selector, rc *ReceiveChannel[T], callback func(val T, more bool)) workflow.Selector {
+func selectorAddReceive[T Value](s workflow.Selector, rc *ReceiveChannel[T], callback func(val T, more bool)) workflow.Selector {
 	return s.AddReceive(rc.wrapped, func(ch workflow.ReceiveChannel, more bool) {
 		val, ok := WrapReceiveChannel[T](ch).ReceiveAsync()
 		if !ok {
@@ -239,13 +239,18 @@ func SelectorAddReceive[T Value](s workflow.Selector, rc *ReceiveChannel[T], cal
 	})
 }
 
+// AddReceive is analogous to workflow.Selector.AddReceive
+func (rc *ReceiveChannel[T]) AddReceive(s workflow.Selector, callback func(val T, more bool)) workflow.Selector {
+	return selectorAddReceive(s, rc, callback)
+}
+
 // SelectorAddSend is analogous to workflow.Selector.AddSend
-func SelectorAddSend[T Value](s workflow.Selector, sc *SendChannel[T], v T, f func()) workflow.Selector {
+func selectorAddSend[T Value](s workflow.Selector, sc *SendChannel[T], v T, f func()) workflow.Selector {
 	return s.AddSend(sc.wrapped, v, f)
 }
 
 // SelectorAddSendValue sends a message without requiring a callback function.
-func SelectorAddSendValue[T Value](s workflow.Selector, sc *SendChannel[T], v T) workflow.Selector {
+func selectorAddSendValue[T Value](s workflow.Selector, sc *SendChannel[T], v T) workflow.Selector {
 	return s.AddSend(sc.wrapped, v, func() {
 		if !sc.SendAsync(v) {
 			panic("message did not send")
@@ -253,10 +258,25 @@ func SelectorAddSendValue[T Value](s workflow.Selector, sc *SendChannel[T], v T)
 	})
 }
 
+// AddSend is analogous to workflow.Selector.AddSend
+func (sc *SendChannel[T]) AddSend(s workflow.Selector, v T, f func()) workflow.Selector {
+	return selectorAddSend(s, sc, v, f)
+}
+
+// AddSendValue sends a message without requiring a callback function
+func (sc *SendChannel[T]) AddSendValue(s workflow.Selector, v T) workflow.Selector {
+	return selectorAddSendValue(s, sc, v)
+}
+
 // SelectorAddFuture is analogous to workflow.Selector.AddFuture
-func SelectorAddFuture[T Value](ctx workflow.Context, s workflow.Selector, future *Future[T], callback func(T, error)) workflow.Selector {
+func selectorAddFuture[T Value](ctx workflow.Context, s workflow.Selector, future *Future[T], callback func(T, error)) workflow.Selector {
 	return s.AddFuture(future.wrapped, func(f workflow.Future) {
 		val, err := WrapFuture[T](f).Get(ctx)
 		callback(val, err)
 	})
+}
+
+// AddFuture is analogous to workflow.Selector.AddFuture
+func (f *Future[T]) AddFuture(ctx workflow.Context, s workflow.Selector, callback func(T, error)) workflow.Selector {
+	return selectorAddFuture(ctx, s, f, callback)
 }

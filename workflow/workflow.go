@@ -11,7 +11,7 @@ type Future[T temporal.Value] struct {
 	wrapped workflow.Future
 }
 
-func (f *Future[T]) Get(ctx workflow.Context) (T, error) {
+func (f *Future[T]) Get(ctx Context) (T, error) {
 	var result T
 	if err := f.wrapped.Get(ctx, &result); err != nil {
 		return result, err
@@ -24,7 +24,7 @@ func (f *Future[T]) IsReady() bool {
 }
 
 // NewFuture creates a new Future as well as associated Settable that is used to set its value.
-func NewFuture[T temporal.Value](ctx workflow.Context) (*Future[T], *Settable[T]) {
+func NewFuture[T temporal.Value](ctx Context) (*Future[T], *Settable[T]) {
 	fut, set := workflow.NewFuture(ctx)
 	return &Future[T]{fut}, &Settable[T]{set}
 }
@@ -55,32 +55,32 @@ func (s *Settable[T]) Chain(future *Future[T]) {
 	s.wrapped.Chain(future.wrapped)
 }
 
-func ExecuteActivity[Resp temporal.Value](ctx workflow.Context, activity any, args ...any) *Future[Resp] {
+func ExecuteActivity[Resp temporal.Value](ctx Context, activity any, args ...any) *Future[Resp] {
 	fut := workflow.ExecuteActivity(ctx, activity, args...)
 	return WrapFuture[Resp](fut)
 }
 
-func ExecuteActivityFunc[Req, Resp temporal.Value](ctx workflow.Context, activity func(context.Context, Req) (Resp, error), req Req) *Future[Resp] {
+func ExecuteActivityFunc[Req, Resp temporal.Value](ctx Context, activity func(context.Context, Req) (Resp, error), req Req) *Future[Resp] {
 	fut := workflow.ExecuteActivity(ctx, activity, req)
 	return WrapFuture[Resp](fut)
 }
 
-func ExecuteLocalActivity[Resp temporal.Value](ctx workflow.Context, localActivity any, args ...any) *Future[Resp] {
+func ExecuteLocalActivity[Resp temporal.Value](ctx Context, localActivity any, args ...any) *Future[Resp] {
 	fut := workflow.ExecuteLocalActivity(ctx, localActivity, args...)
 	return WrapFuture[Resp](fut)
 }
 
-func ExecuteLocalActivityFunc[Req, Resp temporal.Value](ctx workflow.Context, activity func(context.Context, Req) (Resp, error), req Req) *Future[Resp] {
+func ExecuteLocalActivityFunc[Req, Resp temporal.Value](ctx Context, activity func(context.Context, Req) (Resp, error), req Req) *Future[Resp] {
 	fut := workflow.ExecuteLocalActivity(ctx, activity, req)
 	return WrapFuture[Resp](fut)
 }
 
-func ExecuteChildWorkflow[Resp temporal.Value](ctx workflow.Context, childWorkflow any, args ...any) *Future[Resp] {
+func ExecuteChildWorkflow[Resp temporal.Value](ctx Context, childWorkflow any, args ...any) *Future[Resp] {
 	fut := workflow.ExecuteChildWorkflow(ctx, childWorkflow, args...)
 	return WrapFuture[Resp](fut)
 }
 
-func ExecuteChildWorkflowFunc[Req, Resp temporal.Value](ctx workflow.Context, childWorkflow func(workflow.Context, Req) (Resp, error), req Req) *Future[Resp] {
+func ExecuteChildWorkflowFunc[Req, Resp temporal.Value](ctx Context, childWorkflow func(Context, Req) (Resp, error), req Req) *Future[Resp] {
 	fut := workflow.ExecuteChildWorkflow(ctx, childWorkflow, req)
 	return WrapFuture[Resp](fut)
 }
@@ -90,7 +90,7 @@ type SendChannel[T temporal.Value] struct {
 }
 
 // Send blocks until the data is sent.
-func (sc *SendChannel[T]) Send(ctx workflow.Context, v T) {
+func (sc *SendChannel[T]) Send(ctx Context, v T) {
 	sc.wrapped.Send(ctx, v)
 }
 
@@ -116,7 +116,7 @@ type ReceiveChannel[T temporal.Value] struct {
 
 // Receive blocks until a value is sent on the channel.
 // Returns false when Channel is closed.
-func (rc *ReceiveChannel[T]) Receive(ctx workflow.Context) (value T, more bool) {
+func (rc *ReceiveChannel[T]) Receive(ctx Context) (value T, more bool) {
 	more = rc.wrapped.Receive(ctx, &value)
 	return
 }
@@ -154,24 +154,24 @@ func WrapChannel[T temporal.Value](ch workflow.Channel) *Channel[T] {
 }
 
 // NewChannel creates new Channel instance.
-func NewChannel[T temporal.Value](ctx workflow.Context) *Channel[T] {
+func NewChannel[T temporal.Value](ctx Context) *Channel[T] {
 	return WrapChannel[T](workflow.NewChannel(ctx))
 }
 
 // NewNamedChannel creates new Channel instance with a given human readable name.
 // Name appears in stack traces that are blocked on this channel.
-func NewNamedChannel[T temporal.Value](ctx workflow.Context, name string) *Channel[T] {
+func NewNamedChannel[T temporal.Value](ctx Context, name string) *Channel[T] {
 	return WrapChannel[T](workflow.NewNamedChannel(ctx, name))
 }
 
 // NewBufferedChannel creates new buffered Channel instance.
-func NewBufferedChannel[T temporal.Value](ctx workflow.Context, size int) *Channel[T] {
+func NewBufferedChannel[T temporal.Value](ctx Context, size int) *Channel[T] {
 	return WrapChannel[T](workflow.NewBufferedChannel(ctx, size))
 }
 
 // NewNamedBufferedChannel creates a new BufferedChannel instance with a given human readable name.
 // Name appears in stack traces that are blocked on this Channel.
-func NewNamedBufferedChannel[T temporal.Value](ctx workflow.Context, name string, size int) *Channel[T] {
+func NewNamedBufferedChannel[T temporal.Value](ctx Context, name string, size int) *Channel[T] {
 	return WrapChannel[T](workflow.NewNamedBufferedChannel(ctx, name, size))
 }
 
@@ -185,9 +185,9 @@ func NewNamedBufferedChannel[T temporal.Value](ctx workflow.Context, name string
 // rescheduled and re-executed giving SideEffect another chance to succeed.
 //
 // Caution: do not use SideEffect to modify closures. Always retrieve result from SideEffect's encoded return value.
-func SideEffect[T temporal.Value](ctx workflow.Context, f func(workflow.Context) T) (T, error) {
+func SideEffect[T temporal.Value](ctx Context, f func(Context) T) (T, error) {
 	var result T
-	err := workflow.SideEffect(ctx, func(ctx workflow.Context) interface{} {
+	err := workflow.SideEffect(ctx, func(ctx Context) interface{} {
 		return f(ctx)
 	}).Get(&result)
 	return result, err
@@ -208,10 +208,10 @@ func SideEffect[T temporal.Value](ctx workflow.Context, f func(workflow.Context)
 // value as it was returning during the non-replay run.
 //
 // One good use case of MutableSideEffect() is to access dynamically changing config without breaking determinism.
-func MutableSideEffect[T temporal.ComparableValue](ctx workflow.Context, id string, f func(workflow.Context) T) (T, error) {
+func MutableSideEffect[T temporal.ComparableValue](ctx Context, id string, f func(Context) T) (T, error) {
 	var result T
 	err := workflow.MutableSideEffect(ctx, id,
-		func(ctx workflow.Context) interface{} {
+		func(ctx Context) interface{} {
 			return f(ctx)
 		}, func(a, b any) bool {
 			return a.(T) == b.(T)
@@ -261,7 +261,7 @@ func (sc *SendChannel[T]) AddSendValue(s workflow.Selector, v T) workflow.Select
 }
 
 // SelectorAddFuture is analogous to workflow.Selector.AddFuture
-func selectorAddFuture[T temporal.Value](ctx workflow.Context, s workflow.Selector, future *Future[T], callback func(T, error)) workflow.Selector {
+func selectorAddFuture[T temporal.Value](ctx Context, s workflow.Selector, future *Future[T], callback func(T, error)) workflow.Selector {
 	return s.AddFuture(future.wrapped, func(f workflow.Future) {
 		val, err := WrapFuture[T](f).Get(ctx)
 		callback(val, err)
@@ -269,10 +269,10 @@ func selectorAddFuture[T temporal.Value](ctx workflow.Context, s workflow.Select
 }
 
 // AddFuture is analogous to workflow.Selector.AddFuture
-func (f *Future[T]) AddFuture(ctx workflow.Context, s workflow.Selector, callback func(T, error)) workflow.Selector {
+func (f *Future[T]) AddFuture(ctx Context, s workflow.Selector, callback func(T, error)) workflow.Selector {
 	return selectorAddFuture(ctx, s, f, callback)
 }
 
-func SetQueryHandler[Resp temporal.Value](ctx workflow.Context, queryType string, handler func(...temporal.Value) (Resp, error)) error {
+func SetQueryHandler[Resp temporal.Value](ctx Context, queryType string, handler func(...temporal.Value) (Resp, error)) error {
 	return workflow.SetQueryHandler(ctx, queryType, handler)
 }

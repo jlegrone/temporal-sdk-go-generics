@@ -43,19 +43,20 @@ This will fail to compile with a human readable error:
 helloworld.go:12:52: cannot use 42 (untyped int constant) as string value in argument to gworkflow.ExecuteActivityFn
 ```
 
+The code to get the activity's return value can also now be more terse.
+
 ```go
 package helloworld
 
 import (
 	"context"
 
-	gworkflow "github.com/jlegrone/sdk-go-generics/workflow"
-	"go.temporal.io/sdk/workflow"
+	"github.com/jlegrone/sdk-go-generics/workflow"
 )
 
 func Workflow(ctx workflow.Context) (string, error) {
 	// The activity should be passed a string, not an integer.
-	return gworkflow.ExecuteActivityFunc(ctx, Activity, 42).Get(ctx)
+	return workflow.ExecuteActivityFunc(ctx, Activity, 42).Get(ctx)
 }
 
 func Activity(ctx context.Context, name string) (string, error) {

@@ -9,9 +9,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
-	"go.temporal.io/sdk/workflow"
 
-	gworkflow "github.com/jlegrone/sdk-go-generics/workflow"
+	"github.com/jlegrone/sdk-go-generics/workflow"
 )
 
 // None represents an empty value. Useful for constructing futures that will only return error.
@@ -27,7 +26,7 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 	// Start a timer to handle workflow timeout. Normally we'd just register the
 	// future returned by workflow.NewTimer with a selector directly, but this
 	// allows us to test generic channel sending/receiving.
-	timoutChannel := gworkflow.NewNamedChannel[None](ctx, "timeout")
+	timoutChannel := workflow.NewNamedChannel[None](ctx, "timeout")
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		if err := workflow.NewTimer(ctx, time.Minute).Get(ctx, nil); err != nil {
 			panic(err)
@@ -35,7 +34,7 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 		timoutChannel.Send(ctx, None{})
 	})
 
-	punctuation, err := gworkflow.SideEffect(ctx, func(ctx workflow.Context) string {
+	punctuation, err := workflow.SideEffect(ctx, func(ctx workflow.Context) string {
 		return "!"
 	})
 	if err != nil {
@@ -47,7 +46,7 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 		selectErr error
 		selector  = workflow.NewSelector(ctx)
 	)
-	selector = gworkflow.ExecuteActivityFunc(ctx, Activity, name).
+	selector = workflow.ExecuteActivityFunc(ctx, Activity, name).
 		AddFuture(ctx, selector, func(val string, err error) {
 			if err != nil {
 				selectErr = err

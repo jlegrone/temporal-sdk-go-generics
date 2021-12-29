@@ -55,7 +55,7 @@ import (
 
 func Workflow(ctx workflow.Context) (string, error) {
 	// The activity should be passed a string, not an integer.
-	return gworkflow.ExecuteActivityFn(ctx, Activity, 42).Get(ctx)
+	return gworkflow.ExecuteActivityFunc(ctx, Activity, 42).Get(ctx)
 }
 
 func Activity(ctx context.Context, name string) (string, error) {

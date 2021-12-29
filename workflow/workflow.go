@@ -68,7 +68,7 @@ func ExecuteActivity[Resp Value](ctx workflow.Context, activity any, args ...any
 	return WrapFuture[Resp](fut)
 }
 
-func ExecuteActivityFn[Req, Resp Value](ctx workflow.Context, activity func(context.Context, Req) (Resp, error), req Req) *Future[Resp] {
+func ExecuteActivityFunc[Req, Resp Value](ctx workflow.Context, activity func(context.Context, Req) (Resp, error), req Req) *Future[Resp] {
 	fut := workflow.ExecuteActivity(ctx, activity, req)
 	return WrapFuture[Resp](fut)
 }
@@ -78,7 +78,7 @@ func ExecuteLocalActivity[Resp Value](ctx workflow.Context, localActivity any, a
 	return WrapFuture[Resp](fut)
 }
 
-func ExecuteLocalActivityFn[Req, Resp Value](ctx workflow.Context, activity func(context.Context, Req) (Resp, error), req Req) *Future[Resp] {
+func ExecuteLocalActivityFunc[Req, Resp Value](ctx workflow.Context, activity func(context.Context, Req) (Resp, error), req Req) *Future[Resp] {
 	fut := workflow.ExecuteLocalActivity(ctx, activity, req)
 	return WrapFuture[Resp](fut)
 }
@@ -88,7 +88,7 @@ func ExecuteChildWorkflow[Resp Value](ctx workflow.Context, childWorkflow any, a
 	return WrapFuture[Resp](fut)
 }
 
-func ExecuteChildWorkflowFn[Req, Resp Value](ctx workflow.Context, childWorkflow func(workflow.Context, Req) (Resp, error), req Req) *Future[Resp] {
+func ExecuteChildWorkflowFunc[Req, Resp Value](ctx workflow.Context, childWorkflow func(workflow.Context, Req) (Resp, error), req Req) *Future[Resp] {
 	fut := workflow.ExecuteChildWorkflow(ctx, childWorkflow, req)
 	return WrapFuture[Resp](fut)
 }

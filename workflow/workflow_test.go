@@ -27,7 +27,7 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 		return "", err
 	}
 
-	greeting, err := gworkflow.ExecuteActivityFn(ctx, Activity, name).Get(ctx)
+	greeting, err := gworkflow.ExecuteActivityFunc(ctx, Activity, name).Get(ctx)
 	if err != nil {
 		return "", err
 	}

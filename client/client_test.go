@@ -5,14 +5,14 @@ import (
 	"testing"
 
 	gclient "github.com/jlegrone/sdk-go-generics/client"
-	"github.com/jlegrone/sdk-go-generics/common"
+	"github.com/jlegrone/sdk-go-generics/temporal"
 	"github.com/stretchr/testify/assert"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/workflow"
 )
 
-type testWorkflowRun[T common.Value] struct {
+type testWorkflowRun[T temporal.Value] struct {
 	*testEncodedValue[T]
 	client.WorkflowRun
 }
@@ -37,7 +37,7 @@ func (ev *testEncodedValue[T]) Get(valuePtr any) error {
 	return nil
 }
 
-func newWorkflowRun[T common.Value](response T, err error) *testWorkflowRun[T] {
+func newWorkflowRun[T temporal.Value](response T, err error) *testWorkflowRun[T] {
 	return &testWorkflowRun[T]{
 		testEncodedValue: &testEncodedValue[T]{response, err},
 	}
@@ -47,7 +47,7 @@ func (wfr *testWorkflowRun[T]) Get(_ context.Context, valuePtr any) error {
 	return wfr.testEncodedValue.Get(valuePtr)
 }
 
-type testClient[WorkflowResp, QueryResp common.Value] struct {
+type testClient[WorkflowResp, QueryResp temporal.Value] struct {
 	client.Client
 	workflowRun   *testWorkflowRun[WorkflowResp]
 	queryResponse *testEncodedValue[QueryResp]

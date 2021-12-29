@@ -3,12 +3,12 @@ package client
 import (
 	"context"
 
-	"github.com/jlegrone/sdk-go-generics/common"
+	"github.com/jlegrone/sdk-go-generics/temporal"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/workflow"
 )
 
-type WorkflowRun[T common.Value] struct {
+type WorkflowRun[T temporal.Value] struct {
 	wrapped client.WorkflowRun
 }
 
@@ -28,13 +28,13 @@ func (wfr *WorkflowRun[T]) Get(ctx context.Context) (T, error) {
 	return v, nil
 }
 
-func WrapWorkflowRun[T common.Value](wfr client.WorkflowRun) *WorkflowRun[T] {
+func WrapWorkflowRun[T temporal.Value](wfr client.WorkflowRun) *WorkflowRun[T] {
 	return &WorkflowRun[T]{
 		wrapped: wfr,
 	}
 }
 
-func ExecuteWorkflowFunc[Req, Resp common.Value](
+func ExecuteWorkflowFunc[Req, Resp temporal.Value](
 	ctx context.Context,
 	c client.Client,
 	opts client.StartWorkflowOptions,
@@ -50,7 +50,7 @@ func ExecuteWorkflowFunc[Req, Resp common.Value](
 
 // TODO(jlegrone): This has some problems, mainly that the query func must accept
 //                 an argument (which is a common case).
-func QueryWorkflowFunc[Req, Resp common.Value](
+func QueryWorkflowFunc[Req, Resp temporal.Value](
 	ctx context.Context,
 	c client.Client,
 	workflowID string, runID string,

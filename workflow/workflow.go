@@ -131,14 +131,14 @@ func (rc *ReceiveChannel[T]) Receive(ctx workflow.Context) (value T, more bool) 
 
 // ReceiveAsync tries to receive from Channel without blocking.
 // Returns true when Channel has data available, otherwise it returns false immediately.
-func (rc *ReceiveChannel[T]) ReceiveAsync(ctx workflow.Context) (value T, ok bool) {
+func (rc *ReceiveChannel[T]) ReceiveAsync() (value T, ok bool) {
 	ok = rc.wrapped.ReceiveAsync(&value)
 	return
 }
 
 // ReceiveAsyncWithMoreFlag is same as ReceiveAsync with extra return value more to indicate if there could be
 // more values from the Channel. The more is false when Channel is closed.
-func (rc *ReceiveChannel[T]) ReceiveAsyncWithMoreFlag(ctx workflow.Context) (value T, ok, more bool) {
+func (rc *ReceiveChannel[T]) ReceiveAsyncWithMoreFlag() (value T, ok, more bool) {
 	ok, more = rc.wrapped.ReceiveAsyncWithMoreFlag(&value)
 	return
 }
@@ -226,4 +226,28 @@ func MutableSideEffect[T ComparableValue](ctx workflow.Context, id string, f fun
 		},
 	).Get(&result)
 	return result, err
+}
+
+// SelectorAddReceive is analogous to workflow.Selector.AddReceive
+func SelectorAddReceive[T Value](s workflow.Selector, rc *ReceiveChannel[T], callback func(val T, more bool)) workflow.Selector {
+	return s.AddReceive(rc.wrapped, func(ch workflow.ReceiveChannel, more bool) {
+		val, ok := WrapReceiveChannel[T](ch).ReceiveAsync()
+		if !ok {
+			panic("no value on channel")
+		}
+		callback(val, more)
+	})
+}
+
+// SelectorAddSend is analogous to workflow.Selector.AddSend
+func SelectorAddSend[T Value](s workflow.Selector, sc *SendChannel[T], v T, f func()) workflow.Selector {
+	return s.AddSend(sc.wrapped, v, f)
+}
+
+// SelectorAddFuture is analogous to workflow.Selector.AddFuture
+func SelectorAddFuture[T Value](ctx workflow.Context, s workflow.Selector, future *Future[T], callback func(T, error)) workflow.Selector {
+	return s.AddFuture(future.wrapped, func(f workflow.Future) {
+		val, err := WrapFuture[T](f).Get(ctx)
+		callback(val, err)
+	})
 }

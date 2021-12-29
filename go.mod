@@ -1,4 +1,4 @@
-module github.com/jlegrone/sdk-go-generics
+module github.com/jlegrone/temporal-sdk-go-generics
 
 go 1.18
 

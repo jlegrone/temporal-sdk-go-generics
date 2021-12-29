@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 
-	"github.com/jlegrone/sdk-go-generics/workflow"
+	"github.com/jlegrone/temporal-sdk-go-generics/workflow"
 )
 
 // None represents an empty value. Useful for constructing futures that will only return error.

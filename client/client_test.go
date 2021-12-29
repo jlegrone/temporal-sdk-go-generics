@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	gclient "github.com/jlegrone/sdk-go-generics/client"
-	"github.com/jlegrone/sdk-go-generics/temporal"
+	gclient "github.com/jlegrone/temporal-sdk-go-generics/client"
+	"github.com/jlegrone/temporal-sdk-go-generics/temporal"
 	"github.com/stretchr/testify/assert"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/converter"

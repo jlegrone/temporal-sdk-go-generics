@@ -51,7 +51,7 @@ package helloworld
 import (
 	"context"
 
-	"github.com/jlegrone/sdk-go-generics/workflow"
+	"github.com/jlegrone/temporal-sdk-go-generics/workflow"
 )
 
 func Workflow(ctx workflow.Context) (string, error) {

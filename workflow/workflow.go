@@ -3,7 +3,7 @@ package workflow
 import (
 	"context"
 
-	"github.com/jlegrone/sdk-go-generics/temporal"
+	"github.com/jlegrone/temporal-sdk-go-generics/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 

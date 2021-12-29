@@ -244,6 +244,15 @@ func SelectorAddSend[T Value](s workflow.Selector, sc *SendChannel[T], v T, f fu
 	return s.AddSend(sc.wrapped, v, f)
 }
 
+// SelectorAddSendValue sends a message without requiring a callback function.
+func SelectorAddSendValue[T Value](s workflow.Selector, sc *SendChannel[T], v T) workflow.Selector {
+	return s.AddSend(sc.wrapped, v, func() {
+		if !sc.SendAsync(v) {
+			panic("message did not send")
+		}
+	})
+}
+
 // SelectorAddFuture is analogous to workflow.Selector.AddFuture
 func SelectorAddFuture[T Value](ctx workflow.Context, s workflow.Selector, future *Future[T], callback func(T, error)) workflow.Selector {
 	return s.AddFuture(future.wrapped, func(f workflow.Future) {

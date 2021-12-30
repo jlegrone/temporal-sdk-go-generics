@@ -102,6 +102,12 @@ type ActivityClient[Req, Resp temporal.Value] struct {
 	activityType     string
 }
 
+// WithTaskQueue sets the default task queue for activities executed with this client.
+func (ac *ActivityClient[Req, Resp]) WithTaskQueue(taskQueue string) *ActivityClient[Req, Resp] {
+	ac.defaultOpts.TaskQueue = taskQueue
+	return ac
+}
+
 // Start begins an activity execution but does not block on its completion.
 func (ac *ActivityClient[Req, Resp]) Start(ctx Context, req Req) *Future[Resp] {
 	return ExecuteActivity[Resp](ctx, ac.activityType, req)
@@ -154,6 +160,12 @@ type ChildWorkflowClient[Req, Resp temporal.Value] struct {
 func (wfc *ChildWorkflowClient[Req, Resp]) WithOptions(opts ChildWorkflowOptions) *ChildWorkflowClient[Req, Resp] {
 	// TODO: merge these instead of overriding?
 	wfc.defaultOpts = opts
+	return wfc
+}
+
+// WithTaskQueue sets the default task queue for workflows executed with this client.
+func (wfc *ChildWorkflowClient[Req, Resp]) WithTaskQueue(taskQueue string) *ChildWorkflowClient[Req, Resp] {
+	wfc.defaultOpts.TaskQueue = taskQueue
 	return wfc
 }
 

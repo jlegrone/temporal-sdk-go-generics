@@ -37,15 +37,21 @@ func WrapWorkflowRun[T temporal.Value](wfr client.WorkflowRun) *WorkflowRun[T] {
 
 // WorkflowClient provides type safe methods for interacting with a given workflow type.
 type WorkflowClient[Req, Resp temporal.Value] struct {
-	client       client.Client
-	defaultOpts  client.StartWorkflowOptions
+	client       Client
+	defaultOpts  StartWorkflowOptions
 	workflowType string
 }
 
 // WithOptions sets default start options for workflow executions.
-func (wfc *WorkflowClient[Req, Resp]) WithOptions(opts client.StartWorkflowOptions) *WorkflowClient[Req, Resp] {
+func (wfc *WorkflowClient[Req, Resp]) WithOptions(opts StartWorkflowOptions) *WorkflowClient[Req, Resp] {
 	// TODO: merge these instead of overriding?
 	wfc.defaultOpts = opts
+	return wfc
+}
+
+// WithTaskQueue sets the default task queue for workflows executed with this client.
+func (wfc *WorkflowClient[Req, Resp]) WithTaskQueue(taskQueue string) *WorkflowClient[Req, Resp] {
+	wfc.defaultOpts.TaskQueue = taskQueue
 	return wfc
 }
 
@@ -72,7 +78,7 @@ func (wfc *WorkflowClient[Req, Resp]) Run(ctx context.Context, workflowID string
 
 // NewWorkflowClient instantiates a client for a given workflow func.
 func NewWorkflowClient[Req, Resp temporal.Value](
-	client client.Client,
+	client Client,
 	workflow func(workflow.Context, Req) (Resp, error),
 ) *WorkflowClient[Req, Resp] {
 	workflowType, _ := reflect.GetFunctionName(workflow)
@@ -81,7 +87,7 @@ func NewWorkflowClient[Req, Resp temporal.Value](
 
 // NewNamedWorkflowClient instantiates a client for a given workflow type.
 func NewNamedWorkflowClient[Req, Resp temporal.Value](
-	client client.Client,
+	client Client,
 	workflowType string,
 ) *WorkflowClient[Req, Resp] {
 	return &WorkflowClient[Req, Resp]{
@@ -93,7 +99,7 @@ func NewNamedWorkflowClient[Req, Resp temporal.Value](
 // Alternative to WorkflowClient. We should probably choose one or the other to expose.
 func ExecuteWorkflowFunc[Req, Resp temporal.Value](
 	ctx context.Context,
-	c client.Client,
+	c Client,
 	opts client.StartWorkflowOptions,
 	workflow func(workflow.Context, Req) (Resp, error),
 	req Req,
@@ -109,7 +115,7 @@ func ExecuteWorkflowFunc[Req, Resp temporal.Value](
 //                 an argument (which is a common case).
 func QueryWorkflowFunc[Req, Resp temporal.Value](
 	ctx context.Context,
-	c client.Client,
+	c Client,
 	workflowID string, runID string,
 	queryType string,
 	query func(Req) (Resp, error),

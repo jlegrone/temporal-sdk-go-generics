@@ -4,17 +4,17 @@ import (
 	"context"
 	"testing"
 
-	gclient "github.com/jlegrone/temporal-sdk-go-generics/client"
+	"github.com/jlegrone/temporal-sdk-go-generics/client"
 	"github.com/jlegrone/temporal-sdk-go-generics/temporal"
 	"github.com/stretchr/testify/assert"
-	"go.temporal.io/sdk/client"
+	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/workflow"
 )
 
 type testWorkflowRun[T temporal.Value] struct {
 	*testEncodedValue[T]
-	client.WorkflowRun
+	tclient.WorkflowRun
 }
 
 type testEncodedValue[T any] struct {
@@ -53,7 +53,7 @@ type testClient[WorkflowResp, QueryResp temporal.Value] struct {
 	queryResponse *testEncodedValue[QueryResp]
 }
 
-func (tc *testClient[_, _]) ExecuteWorkflow(_ context.Context, _ client.StartWorkflowOptions, _ any, _ ...any) (client.WorkflowRun, error) {
+func (tc *testClient[_, _]) ExecuteWorkflow(_ context.Context, _ client.StartWorkflowOptions, _ any, _ ...any) (tclient.WorkflowRun, error) {
 	return tc.workflowRun, nil
 }
 
@@ -78,7 +78,7 @@ func TestExecuteWorkflowFunc(t *testing.T) {
 		c   = newTestClient()
 	)
 
-	wfr, err := gclient.ExecuteWorkflowFunc(ctx, c, client.StartWorkflowOptions{}, HelloWorkflow, "Temporal")
+	wfr, err := client.ExecuteWorkflowFunc(ctx, c, client.StartWorkflowOptions{}, HelloWorkflow, "Temporal")
 	assert.NoError(t, err)
 
 	result, err := wfr.Get(ctx)
@@ -88,8 +88,8 @@ func TestExecuteWorkflowFunc(t *testing.T) {
 
 func TestWorkflowClient_Run(t *testing.T) {
 	c := newTestClient()
-	result, err := gclient.NewWorkflowClient(c, HelloWorkflow).
-		WithOptions(client.StartWorkflowOptions{TaskQueue: "test-tq"}).
+	result, err := client.NewWorkflowClient(c, HelloWorkflow).
+		WithTaskQueue("test-tq").
 		Run(context.Background(), "test-wf-id", "Temporal")
 	assert.NoError(t, err)
 	assert.Equal(t, "Test workflow response", result)
@@ -105,7 +105,7 @@ func TestQueryWorkflowFunc(t *testing.T) {
 		c   = newTestClient()
 	)
 
-	result, err := gclient.QueryWorkflowFunc(ctx, c, "", "", "my-query", HelloQuery, 42)
+	result, err := client.QueryWorkflowFunc(ctx, c, "", "", "my-query", HelloQuery, 42)
 	assert.NoError(t, err)
 	assert.Equal(t, "Test query response", result)
 }

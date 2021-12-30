@@ -1,5 +1,8 @@
 package temporal
 
+// None represents an empty value. Useful for constructing futures that will only return error.
+type None struct{}
+
 // Value represents any serializable value which may be converted to a payload.
 type Value interface {
 	any

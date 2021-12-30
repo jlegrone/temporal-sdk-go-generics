@@ -3,6 +3,7 @@ package compilecheck
 
 import (
 	"context"
+
 	"github.com/jlegrone/temporal-sdk-go-generics/client"
 	"github.com/jlegrone/temporal-sdk-go-generics/temporal"
 	"github.com/jlegrone/temporal-sdk-go-generics/workflow"

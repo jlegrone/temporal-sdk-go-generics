@@ -10,6 +10,7 @@ type (
 	ActivityOptions      = workflow.ActivityOptions
 	LocalActivityOptions = workflow.LocalActivityOptions
 	ChildWorkflowOptions = workflow.ChildWorkflowOptions
+	Execution            = workflow.Execution
 	ContinueAsNewError   = workflow.ContinueAsNewError
 )
 

@@ -36,12 +36,33 @@ func WrapFuture[T temporal.Value](future workflow.Future) *Future[T] {
 	}
 }
 
-type ChildWorkflowFuture[T temporal.Value] struct{
+type ChildWorkflowFuture[T temporal.Value] struct {
 	*Future[T]
+	execution Execution
 }
 
-func (wf *ChildWorkflowFuture[T]) GetExecution() workflow.Execution {
-	panic("unimplemented")
+// GetExecution returns the child workflow ID and run ID.
+//
+// This call will block until the child workflow is started.
+func (wf *ChildWorkflowFuture[T]) GetExecution(ctx Context) Execution {
+	if wf.execution.ID != "" {
+		return wf.execution
+	}
+	var execution Execution
+	if err := wf.Future.wrapped.(workflow.ChildWorkflowFuture).GetChildWorkflowExecution().Get(ctx, &execution); err != nil {
+		panic(err)
+	}
+	// cache for future calls
+	wf.execution = execution
+	return wf.execution
+}
+
+// Signal sends a signal to the child workflow.
+//
+// This call will block until the child workflow is started.
+func (wf *ChildWorkflowFuture[T]) Signal(ctx Context, signalName string, data temporal.Value) *Future[temporal.None] {
+	fut := wf.Future.wrapped.(workflow.ChildWorkflowFuture).SignalChildWorkflow(ctx, signalName, data)
+	return WrapFuture[temporal.None](fut)
 }
 
 type Settable[T temporal.Value] struct {

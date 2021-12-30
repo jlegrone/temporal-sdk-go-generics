@@ -10,11 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
 
+	"github.com/jlegrone/temporal-sdk-go-generics/temporal"
 	"github.com/jlegrone/temporal-sdk-go-generics/workflow"
 )
-
-// None represents an empty value. Useful for constructing futures that will only return error.
-type None struct{}
 
 // Workflow is a Hello World workflow definition, significantly over-engineered to exercise
 // more of the workflow package than would usually be necessary.
@@ -26,12 +24,12 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 	// Start a timer to handle workflow timeout. Normally we'd just register the
 	// future returned by workflow.NewTimer with a selector directly, but this
 	// allows us to test generic channel sending/receiving.
-	timoutChannel := workflow.NewNamedChannel[None](ctx, "timeout")
+	timoutChannel := workflow.NewNamedChannel[temporal.None](ctx, "timeout")
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		if err := workflow.NewTimer(ctx, time.Minute).Get(ctx, nil); err != nil {
 			panic(err)
 		}
-		timoutChannel.Send(ctx, None{})
+		timoutChannel.Send(ctx, temporal.None{})
 	})
 
 	punctuation, err := workflow.SideEffect(ctx, func(ctx workflow.Context) string {
@@ -56,7 +54,7 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 			workflow.GetLogger(ctx).Info("Received activity result", "result", val)
 			greeting = val
 		})
-	selector = timoutChannel.AddReceive(selector, func(_ None, more bool) {
+	selector = timoutChannel.AddReceive(selector, func(_ temporal.None, more bool) {
 		selectErr = fmt.Errorf("my custom timer fired: %w", workflow.ErrDeadlineExceeded)
 	})
 	selector.Select(ctx)

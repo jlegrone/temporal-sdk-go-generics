@@ -86,6 +86,15 @@ func TestExecuteWorkflowFunc(t *testing.T) {
 	assert.Equal(t, "Test workflow response", result)
 }
 
+func TestWorkflowClient_Run(t *testing.T) {
+	c := newTestClient()
+	result, err := gclient.NewWorkflowClient(c, HelloWorkflow).
+		WithOptions(client.StartWorkflowOptions{TaskQueue: "test-tq"}).
+		Run(context.Background(), "test-wf-id", "Temporal")
+	assert.NoError(t, err)
+	assert.Equal(t, "Test workflow response", result)
+}
+
 func HelloQuery(index int) (string, error) {
 	panic("unimplemented")
 }

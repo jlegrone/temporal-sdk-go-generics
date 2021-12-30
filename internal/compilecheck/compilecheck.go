@@ -45,8 +45,10 @@ type workerChildWorkflowClient[Self any, Req, Resp temporal.Value] interface {
 
 type workerActivityClient[Self any, Req, Resp temporal.Value] interface {
 	Start(ctx workflow.Context, req Req) *workflow.Future[Resp]
-	Run(ctx workflow.Context, req Req) (Resp, error)
 	StartLocal(ctx workflow.Context, req Req) *workflow.Future[Resp]
+	Run(ctx workflow.Context, req Req) (Resp, error)
 	RunLocal(ctx workflow.Context, req Req) (Resp, error)
+	WithOptions(opts workflow.ActivityOptions) Self
+	WithLocalOptions(opts workflow.LocalActivityOptions) Self
 	optionsBuilder[Self]
 }

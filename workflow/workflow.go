@@ -102,6 +102,18 @@ type ActivityClient[Req, Resp temporal.Value] struct {
 	activityType     string
 }
 
+// WithOptions sets default start options for activity executions.
+func (ac *ActivityClient[Req, Resp]) WithOptions(opts ActivityOptions) *ActivityClient[Req, Resp] {
+	ac.defaultOpts = opts
+	return ac
+}
+
+// WithLocalOptions sets default start options for local activity executions.
+func (ac *ActivityClient[Req, Resp]) WithLocalOptions(opts LocalActivityOptions) *ActivityClient[Req, Resp] {
+	ac.defaultLocalOpts = opts
+	return ac
+}
+
 // WithTaskQueue sets the default task queue for activities executed with this client.
 func (ac *ActivityClient[Req, Resp]) WithTaskQueue(taskQueue string) *ActivityClient[Req, Resp] {
 	ac.defaultOpts.TaskQueue = taskQueue

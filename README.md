@@ -40,7 +40,7 @@ func Activity(ctx context.Context, name string) (string, error) {
 This will fail to compile with a human readable error:
 
 ```
-helloworld.go:12:52: cannot use 42 (untyped int constant) as string value in argument to gworkflow.ExecuteActivityFn
+helloworld.go:11:55: cannot use 42 (untyped int constant) as string value in argument to workflow.NewActivityClient(Activity).Run
 ```
 
 The code to get the activity's return value can also now be more terse.
@@ -56,7 +56,7 @@ import (
 
 func Workflow(ctx workflow.Context) (string, error) {
 	// The activity should be passed a string, not an integer.
-	return workflow.ExecuteActivityFunc(ctx, Activity, 42).Get(ctx)
+	return workflow.NewActivityClient(Activity).Run(ctx, 42)
 }
 
 func Activity(ctx context.Context, name string) (string, error) {

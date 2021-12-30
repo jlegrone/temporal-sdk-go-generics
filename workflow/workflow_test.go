@@ -46,7 +46,8 @@ func Workflow(ctx workflow.Context, name string) (string, error) {
 		selectErr error
 		selector  = workflow.NewSelector(ctx)
 	)
-	selector = workflow.ExecuteActivityFunc(ctx, Activity, name).
+	selector = workflow.NewActivityClient(Activity).
+		Start(ctx, name).
 		AddFuture(ctx, selector, func(val string, err error) {
 			if err != nil {
 				selectErr = err

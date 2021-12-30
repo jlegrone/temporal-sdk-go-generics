@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 
+	"github.com/jlegrone/temporal-sdk-go-generics/internal/reflect"
 	"github.com/jlegrone/temporal-sdk-go-generics/temporal"
 	"go.temporal.io/sdk/workflow"
 )
@@ -35,6 +36,14 @@ func WrapFuture[T temporal.Value](future workflow.Future) *Future[T] {
 	}
 }
 
+type ChildWorkflowFuture[T temporal.Value] struct{
+	*Future[T]
+}
+
+func (wf *ChildWorkflowFuture[T]) GetExecution() workflow.Execution {
+	panic("unimplemented")
+}
+
 type Settable[T temporal.Value] struct {
 	wrapped workflow.Settable
 }
@@ -60,29 +69,98 @@ func ExecuteActivity[Resp temporal.Value](ctx Context, activity any, args ...any
 	return WrapFuture[Resp](fut)
 }
 
-func ExecuteActivityFunc[Req, Resp temporal.Value](ctx Context, activity func(context.Context, Req) (Resp, error), req Req) *Future[Resp] {
-	fut := workflow.ExecuteActivity(ctx, activity, req)
-	return WrapFuture[Resp](fut)
-}
-
 func ExecuteLocalActivity[Resp temporal.Value](ctx Context, localActivity any, args ...any) *Future[Resp] {
 	fut := workflow.ExecuteLocalActivity(ctx, localActivity, args...)
 	return WrapFuture[Resp](fut)
 }
 
-func ExecuteLocalActivityFunc[Req, Resp temporal.Value](ctx Context, activity func(context.Context, Req) (Resp, error), req Req) *Future[Resp] {
-	fut := workflow.ExecuteLocalActivity(ctx, activity, req)
-	return WrapFuture[Resp](fut)
+// ActivityClient provides type safe methods for interacting with a given activity type.
+type ActivityClient[Req, Resp temporal.Value] struct {
+	defaultOpts      ActivityOptions
+	defaultLocalOpts LocalActivityOptions
+	activityType     string
 }
 
-func ExecuteChildWorkflow[Resp temporal.Value](ctx Context, childWorkflow any, args ...any) *Future[Resp] {
+// Start begins an activity execution but does not block on its completion.
+func (ac *ActivityClient[Req, Resp]) Start(ctx Context, req Req) *Future[Resp] {
+	return ExecuteActivity[Resp](ctx, ac.activityType, req)
+}
+
+// Run starts an activity and waits for it to complete, returning the result.
+func (ac *ActivityClient[Req, Resp]) Run(ctx Context, req Req) (Resp, error) {
+	return ac.Start(ctx, req).Get(ctx)
+}
+
+// StartLocal begins a local activity execution but does not block on its completion.
+func (ac *ActivityClient[Req, Resp]) StartLocal(ctx Context, req Req) *Future[Resp] {
+	return ExecuteLocalActivity[Resp](ctx, ac.activityType, req)
+}
+
+// RunLocal starts a local activity and waits for it to complete, returning the result.
+func (ac *ActivityClient[Req, Resp]) RunLocal(ctx Context, req Req) (Resp, error) {
+	return ac.Start(ctx, req).Get(ctx)
+}
+
+// NewActivityClient instantiates a client for a given activity func.
+func NewActivityClient[Req, Resp temporal.Value](
+	activity func(context.Context, Req) (Resp, error),
+) *ActivityClient[Req, Resp] {
+	activityType, _ := reflect.GetFunctionName(activity)
+	return NewNamedActivityClient[Req, Resp](activityType)
+}
+
+// NewNamedActivityClient instantiates a client for a given activity type.
+func NewNamedActivityClient[Req, Resp temporal.Value](activityType string) *ActivityClient[Req, Resp] {
+	return &ActivityClient[Req, Resp]{
+		activityType: activityType,
+	}
+}
+
+func ExecuteChildWorkflow[Resp temporal.Value](ctx Context, childWorkflow any, args ...any) *ChildWorkflowFuture[Resp] {
 	fut := workflow.ExecuteChildWorkflow(ctx, childWorkflow, args...)
-	return WrapFuture[Resp](fut)
+	return &ChildWorkflowFuture[Resp]{
+		Future: WrapFuture[Resp](fut),
+	}
 }
 
-func ExecuteChildWorkflowFunc[Req, Resp temporal.Value](ctx Context, childWorkflow func(Context, Req) (Resp, error), req Req) *Future[Resp] {
-	fut := workflow.ExecuteChildWorkflow(ctx, childWorkflow, req)
-	return WrapFuture[Resp](fut)
+// ChildWorkflowClient provides type safe methods for interacting with a given workflow type.
+type ChildWorkflowClient[Req, Resp temporal.Value] struct {
+	defaultOpts  ChildWorkflowOptions
+	workflowType string
+}
+
+// WithOptions sets default start options for workflow executions.
+func (wfc *ChildWorkflowClient[Req, Resp]) WithOptions(opts ChildWorkflowOptions) *ChildWorkflowClient[Req, Resp] {
+	// TODO: merge these instead of overriding?
+	wfc.defaultOpts = opts
+	return wfc
+}
+
+// Start begins a workflow execution but does not block on its completion.
+func (wfc *ChildWorkflowClient[Req, Resp]) Start(ctx Context, workflowID string, req Req) *ChildWorkflowFuture[Resp] {
+	opts := wfc.defaultOpts
+	opts.WorkflowID = workflowID
+	return ExecuteChildWorkflow[Resp](ctx, wfc.workflowType, req)
+}
+
+// Run starts a workflow and waits for it to complete, returning the result.
+func (wfc *ChildWorkflowClient[Req, Resp]) Run(ctx Context, workflowID string, req Req) (Resp, error) {
+	return wfc.Start(ctx, workflowID, req).Get(ctx)
+}
+
+// NewChildWorkflowClient instantiates a client for a given workflow func.
+func NewChildWorkflowClient[Req, Resp temporal.Value](
+	workflow func(workflow.Context, Req) (Resp, error),
+) *ChildWorkflowClient[Req, Resp] {
+	workflowType, _ := reflect.GetFunctionName(workflow)
+	return NewNamedChildWorkflowClient[Req, Resp](workflowType)
+}
+
+// NewNamedChildWorkflowClient instantiates a client for a given workflow type.
+func NewNamedChildWorkflowClient[Req, Resp temporal.Value](workflowType string) *ChildWorkflowClient[Req, Resp] {
+	return &ChildWorkflowClient[Req, Resp]{
+		workflowType: workflowType,
+	}
 }
 
 type SendChannel[T temporal.Value] struct {

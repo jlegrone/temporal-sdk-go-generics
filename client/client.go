@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 
+	"github.com/jlegrone/temporal-sdk-go-generics/internal/reflect"
 	"github.com/jlegrone/temporal-sdk-go-generics/temporal"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/workflow"
@@ -74,7 +75,7 @@ func NewWorkflowClient[Req, Resp temporal.Value](
 	client client.Client,
 	workflow func(workflow.Context, Req) (Resp, error),
 ) *WorkflowClient[Req, Resp] {
-	workflowType := "TODO" // compute this from function name
+	workflowType, _ := reflect.GetFunctionName(workflow)
 	return NewNamedWorkflowClient[Req, Resp](client, workflowType)
 }
 
